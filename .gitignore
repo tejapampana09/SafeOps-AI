@@ -1,0 +1,24 @@
+# Node/Vite dependencies
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Python dependencies
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env
+
+# Database and Log files
+backend/data/safeops.db
+*.log
+
+# Editor configurations
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
