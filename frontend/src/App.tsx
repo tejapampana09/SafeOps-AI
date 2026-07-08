@@ -131,22 +131,28 @@ function App() {
               Normal Ops
             </button>
             <button 
-              className={`btn btn-sm ${activeScenario === 'COKE_OVEN_GAS_LEAK' ? 'btn-danger-glow' : 'btn-secondary'}`}
-              onClick={() => handleScenarioChange('COKE_OVEN_GAS_LEAK')}
+              className={`btn btn-sm ${activeScenario === 'GAS_LEAK' ? 'btn-warning-glow' : 'btn-secondary'}`}
+              onClick={() => handleScenarioChange('GAS_LEAK')}
             >
-              Gas Leak (Sec 1)
+              Gas Leak
             </button>
             <button 
-              className={`btn btn-sm ${activeScenario === 'UNAUTHORIZED_CONFINED_ENTRY' ? 'btn-warning-glow' : 'btn-secondary'}`}
-              onClick={() => handleScenarioChange('UNAUTHORIZED_CONFINED_ENTRY')}
+              className={`btn btn-sm ${activeScenario === 'HOT_WORK_CONFLICT' ? 'btn-warning-glow' : 'btn-secondary'}`}
+              onClick={() => handleScenarioChange('HOT_WORK_CONFLICT')}
             >
-              PPE Confined Entry (Sec 2)
+              Hot Work Conflict
             </button>
             <button 
-              className={`btn btn-sm ${activeScenario === 'BOILER_PRESSURE_SPIKE' ? 'btn-danger-glow' : 'btn-secondary'}`}
-              onClick={() => handleScenarioChange('BOILER_PRESSURE_SPIKE')}
+              className={`btn btn-sm ${activeScenario === 'UNAUTHORIZED_WORKER' ? 'btn-warning-glow' : 'btn-secondary'}`}
+              onClick={() => handleScenarioChange('UNAUTHORIZED_WORKER')}
             >
-              Pressure Spike (Sec 3)
+              Unauthorized Worker
+            </button>
+            <button 
+              className={`btn btn-sm ${activeScenario === 'COMBINED_COMPOUND_RISK' ? 'btn-danger-glow' : 'btn-secondary'}`}
+              onClick={() => handleScenarioChange('COMBINED_COMPOUND_RISK')}
+            >
+              Compound Risk (Critical)
             </button>
           </div>
         </div>

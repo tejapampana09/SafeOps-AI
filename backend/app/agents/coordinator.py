@@ -188,139 +188,177 @@ You MUST respond ONLY with a JSON object matching this exact schema:
         risk_score: int
     ) -> Tuple[List[Dict[str, str]], List[str], List[str], str]:
         
-        # Detect active simulator scenarios based on sensor values and worker statuses
-        is_gas_leak = any(s["id"] == "SNS-SEC1-GAS01" and s["current_value"] > 30 for s in sensors)
-        is_boiler_spike = any(s["id"] == "SNS-SEC3-PRESS01" and s["current_value"] > 7.0 for s in sensors)
-        is_confined_entry = any(w["current_location"] == "Sector 2 - Storage Tanks" and w["ppe_status"] == "MISSING_HELMET" for w in workers)
+        # Check active scenarios
+        co_gas = next((s["current_value"] for s in sensors if s["id"] == "SNS-SEC1-GAS01"), 0.0)
+        amit = next((w for w in workers if w["id"] == "WRK-001"), None)
+        rajesh = next((w for w in workers if w["id"] == "WRK-003"), None)
+        p1 = next((p for p in permits if p["id"] == "PTW-2026-001"), None)
+
+        is_combined = co_gas > 70.0 and amit is not None and "Sector 1" in amit["current_location"]
+        is_gas_leak = co_gas > 30.0 and (p1 is None or p1["status"] == "EXPIRED")
+        is_hot_work_conflict = co_gas > 15.0 and p1 is not None and p1["status"] == "APPROVED" and co_gas <= 30.0
+        is_unauthorized = rajesh is not None and "Sector 2" in rajesh["current_location"]
 
         debate_transcript = []
         mitigation_checklist = []
         regulatory_citations = []
         explanation = ""
 
-        if is_gas_leak:
+        if is_combined:
             debate_transcript = [
                 {
                     "agent": "SCADA Agent",
-                    "message": "Alarm! CO gas sensor SNS-SEC1-GAS01 in Sector 1 Coke Oven Battery is spiking rapidly. Currently registered at over 45 ppm. This is above the PEL limit."
+                    "message": f"Critical Safety Threat! CO gas concentration at SNS-SEC1-GAS01 in Sector 1 Coke Oven Battery has breached critical thresholds, registering at {co_gas} ppm."
                 },
                 {
                     "agent": "Permit Audit Agent",
-                    "message": "Permit check: Permit PTW-2026-001 (HOT WORK) is currently approved and active in Sector 1 for welding. This is an immediate ignition risk!"
+                    "message": "Permit check: Hot Work Permit PTW-2026-001 (welding) is active in Sector 1. This represents an immediate explosion hazard in the presence of toxic CO gas accumulation!"
                 },
                 {
                     "agent": "CCTV Vision Agent",
-                    "message": "CCTV analytics confirm Amit Sharma is on-site in Sector 1 near the coke oven. PPE checks show safety gear is present, but they are directly in the path of the vapor plume."
+                    "message": "CCTV visual check confirms worker Amit Sharma is present in Sector 1 near the coke oven line. They are in direct proximity to the gas leak."
                 },
                 {
                     "agent": "Regulatory Compliance Agent",
-                    "message": "This is a direct violation of OISD-GDN-137. Hot work operations must be suspended immediately in any sector if gas levels exceed 10% LEL or toxic gas concentrations exceed permissible exposure limits (PEL)."
+                    "message": "According to Section 36 of the Factories Act 1948 and OISD-GDN-137, all hot work operations must be suspended immediately, and personnel must be evacuated when flammable or toxic gas concentrations exceed safe occupational exposure limits."
                 },
                 {
                     "agent": "Safety Coordinator",
-                    "message": "Understood. The co-occurrence of active hot work and escalating CO gas concentration constitutes a critical compound risk. Initiating automatic permit revocation and gas line isolation."
+                    "message": "Initiating critical emergency response protocol. Revoking Hot Work Permit PTW-2026-001, triggering Sector 1 evacuation sirens, and notifying EHS response teams."
                 }
             ]
             mitigation_checklist = [
-                "Immediately revoke Hot Work Permit PTW-2026-001",
-                "Instruct operator Amit Sharma to halt welding operations and evacuate Sector 1",
-                "Dispatch emergency safety supervisor with gas analyzer to isolate the coke oven line",
-                "Increase ventilation exhaust fans in Sector 1 to maximum capacity"
+                "Evacuate worker Amit Sharma and all personnel from Sector 1",
+                "Revoke and suspend Hot Work Permit PTW-2026-001",
+                "Trigger automated nitrogen purging for coke oven line isolation",
+                "Activate Sector 1 exhaust scrubbers to ventilate CO gas"
             ]
             regulatory_citations = [
-                "OISD-GDN-137 (Permit to Work System)",
-                "Factories Act 1948 - Section 36 (Precautions against dangerous fumes)"
+                "Factories Act 1948 - Section 36 (Precautions against dangerous fumes)",
+                "OISD-GDN-137 (Permit to Work System Guidelines)"
             ]
-            explanation = "Critical compound risk in Sector 1. Active welding operations during CO gas accumulation. Immediate evacuation and permit suspension required."
+            explanation = "CRITICAL HAZARD: CO gas leak co-occurring with active hot work welding and workers present in Sector 1. Evacuation and permit suspension initiated."
 
-        elif is_boiler_spike:
+        elif is_gas_leak:
             debate_transcript = [
                 {
                     "agent": "SCADA Agent",
-                    "message": "Critical threshold alert! Steam boiler pressure sensor SNS-SEC3-PRESS01 in Sector 3 Utility Block has spiked to 8.2 bar, exceeding the maximum safe operating pressure of 7.0 bar."
+                    "message": f"SCADA process alert: CO gas concentration at SNS-SEC1-GAS01 in Sector 1 Coke Oven Battery has drifted to warning level of {co_gas} ppm."
                 },
                 {
                     "agent": "Permit Audit Agent",
-                    "message": "Checking Sector 3 permits. No active maintenance permits exist in Sector 3, meaning this is a process system deviation, not a planned pressure release."
+                    "message": "Permit audit shows Permit PTW-2026-001 is EXPIRED. No hot work or maintenance operations are active in Sector 1. The ignition risk is low."
                 },
                 {
                     "agent": "CCTV Vision Agent",
-                    "message": "CCTV shows Sector 3 Utility Block is clear of personnel. No workers are in the immediate blast zone radius."
+                    "message": "CCTV logs verify Sector 1 is empty of workers. Amit Sharma was successfully relocated to Sector 4."
                 },
                 {
                     "agent": "Regulatory Compliance Agent",
-                    "message": "Under Section 31 of the Factories Act 1948, all pressure plants must be fitted with safety valves and inspected annually. Operation above maximum working pressure violates statutory safety guidelines."
+                    "message": "Although there is no worker present, Section 36 of the Factories Act 1948 requires gas testing to identify and repair leaks. The area must remain cordoned off."
                 },
                 {
                     "agent": "Safety Coordinator",
-                    "message": "Agreed. High boiler pressure without maintenance control represents a system failure risk. Dispatching valve control signals to relieve pressure."
+                    "message": "Understood. The hazard is restricted to a process anomaly. No immediate evacuation is needed, but we will dispatch maintenance to seal the leak."
                 }
             ]
             mitigation_checklist = [
-                "Trigger emergency steam vent valve V-302 to dump pressure",
-                "Isolate fuel gas supply lines to boiler burner B-101",
-                "Restrict entry to Sector 3 Utility Block",
-                "Notify pressure vessel inspector team"
+                "Cordon off Sector 1 Coke Oven Battery entrance",
+                "Deploy maintenance crew with portable gas sniffers to locate leak source",
+                "Verify Sector 1 mechanical exhaust fans are operational"
             ]
             regulatory_citations = [
-                "Factories Act 1948 - Section 31 (Pressure Plant guidelines)",
-                "Indian Boiler Regulations (IBR 1950)"
+                "Factories Act 1948 - Section 36 (Gas testing requirements)",
+                "OISD-STD-105 Section 6.2"
             ]
-            explanation = "High process pressure in Sector 3 boiler. Automated pressure release protocols initiated."
+            explanation = "Process Warning: Elevated CO gas detected in Sector 1. Sector is clear of personnel. Maintenance crew dispatched for line leak check."
 
-        elif is_confined_entry:
+        elif is_hot_work_conflict:
             debate_transcript = [
                 {
-                    "agent": "CCTV Vision Agent",
-                    "message": "PPE Alert! Worker Priya Patel has entered Sector 2 Storage Tanks confined space. Visual recognition flags she is missing her safety helmet! This is a major PPE breach."
-                },
-                {
                     "agent": "Permit Audit Agent",
-                    "message": "Permit PTW-2026-002 is active in Sector 2, but entry conditions specify full PPE compliance including harness, lifeline, and safety helmet."
+                    "message": "Permit Conflict Alert: Hot Work permit PTW-2026-001 (welding) is active in Sector 1, but process parameters show minor CO gas leak warnings."
                 },
                 {
                     "agent": "SCADA Agent",
-                    "message": "SCADA gas readings in Sector 2 Methane sensor SNS-SEC2-GAS01 are currently normal at 0% LEL, but toxic gas pockets can form rapidly in confined storage tanks."
+                    "message": f"Sensor SNS-SEC1-GAS01 reads {co_gas} ppm. This is below critical levels but above normal. Accumulations could lead to an ignition incident."
+                },
+                {
+                    "agent": "CCTV Vision Agent",
+                    "message": "CCTV scans Amit Sharma active in Sector 1 with welding gear. Standard helmet and vest PPE is present."
                 },
                 {
                     "agent": "Regulatory Compliance Agent",
-                    "message": "Entering a confined space without a safety helmet and verified rescue harness violations Section 36 of the Factories Act 1948 and DGMS safety circulars."
+                    "message": "Under OISD-GDN-137, hot work permits can only be approved if the environment is verified gas-free. An active permit during any gas drift represents a compliance conflict."
                 },
                 {
                     "agent": "Safety Coordinator",
-                    "message": "Severe field violation. Contacting Sector 2 foreman to recall worker Priya Patel from the storage tank until safety helmet compliance is met."
+                    "message": "Agreed. Suspending welding operations temporarily as a safety precaution. Restoring permit only after CO levels stabilize."
                 }
             ]
             mitigation_checklist = [
-                "Order worker Priya Patel to immediately exit Sector 2 confined space",
-                "Suspend Confined Space Permit PTW-2026-002 until safety helmet is verified",
-                "Audit safety supervisor log in Sector 2 for permit oversight"
+                "Instruct worker Amit Sharma to temporarily halt welding operations",
+                "Deploy safety inspector to verify local gas level at welding nozzle",
+                "Audit hot work permit precautions compliance logs"
             ]
             regulatory_citations = [
-                "Factories Act 1948 - Section 36 (Confined Space Regulations)",
-                "OISD-STD-105 (Work Permit System)"
+                "OISD-GDN-137 (Permit compliance standards)",
+                "Factories Act 1948 - Section 36"
             ]
-            explanation = "PPE breach inside confined space. Worker detected in Sector 2 storage tank without helmet. Recall protocol initiated."
+            explanation = "Safety Conflict: Active hot work permit approved in Sector 1 during minor CO gas warning. Temporary work suspension recommended."
+
+        elif is_unauthorized:
+            debate_transcript = [
+                {
+                    "agent": "CCTV Vision Agent",
+                    "message": "Field Alert! CCTV analytics detect worker Rajesh Kumar has entered Sector 2 Storage Tanks confined space area."
+                },
+                {
+                    "agent": "Permit Audit Agent",
+                    "message": "Permit check: Rajesh Kumar has NO active permit (active_permit_id is NULL). Confined Space Permit PTW-2026-002 is registered only to Priya Patel."
+                },
+                {
+                    "agent": "SCADA Agent",
+                    "message": "SCADA sensors show gas levels inside Sector 2 are currently normal, but toxic gas pockets can form rapidly without continuous ventilation."
+                },
+                {
+                    "agent": "Regulatory Compliance Agent",
+                    "message": "Entering a confined space without a valid Confined Space Entry Permit and a standby supervisor breaches Section 36 of the Factories Act 1948 and OISD-STD-105."
+                },
+                {
+                    "agent": "Safety Coordinator",
+                    "message": "Critical compliance breach. Alerting Sector 2 standby supervisor to immediately recall Rajesh Kumar from the storage tank."
+                }
+            ]
+            mitigation_checklist = [
+                "Recall worker Rajesh Kumar from Sector 2 confined space immediately",
+                "Deploy safety supervisor to secure the Sector 2 manway entry point",
+                "Perform safety briefing with technician regarding permit procedures"
+            ]
+            regulatory_citations = [
+                "Factories Act 1948 - Section 36 (Confined Space Entry Rules)",
+                "OISD-STD-105 (Permit to Work System)"
+            ]
+            explanation = "Field Violation: Worker Rajesh Kumar detected inside Sector 2 Storage Tank confined space without an approved Confined Space permit."
 
         else:
-            # General fallback alert for other warnings
             debate_transcript = [
                 {
                     "agent": "Safety Coordinator",
-                    "message": f"Safety alert triggered with compound risk rating of {risk_score}."
+                    "message": f"Safety evaluation completed. Compound risk rating is {risk_score}."
                 },
                 {
                     "agent": "SCADA Agent",
-                    "message": f"Sensor parameters are showing warning status."
+                    "message": "All process variables (temperature, pressure, gas concentration) are stable."
                 },
                 {
                     "agent": "Regulatory Compliance Agent",
-                    "message": "Safety procedures must align with general compliance guidelines."
+                    "message": "No regulatory deviations or safety compliance conflicts identified."
                 }
             ]
-            mitigation_checklist = ["Perform field validation checks", "Verify safety logs"]
-            regulatory_citations = ["Factories Act 1948 - General Safety Guidelines"]
-            explanation = "Plant safety parameters are showing warning thresholds. Field investigation advised."
+            mitigation_checklist = ["Perform standard inspection patrols", "Verify sensor telemetry streams"]
+            regulatory_citations = []
+            explanation = "System Secure. All safety parameters are within zero-harm boundaries."
 
         return debate_transcript, mitigation_checklist, regulatory_citations, explanation
 

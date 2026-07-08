@@ -94,10 +94,10 @@ from app.simulator.engine import simulator_engine
 @router.post("/simulator/trigger")
 async def trigger_simulation(trigger: SimulationTrigger):
     """Triggers an industrial hazard scenario (e.g., Coke Oven Leak)."""
-    if trigger.scenario_id not in ["NORMAL", "COKE_OVEN_GAS_LEAK", "UNAUTHORIZED_CONFINED_ENTRY", "BOILER_PRESSURE_SPIKE"]:
+    if trigger.scenario_id not in ["NORMAL", "GAS_LEAK", "HOT_WORK_CONFLICT", "UNAUTHORIZED_WORKER", "COMBINED_COMPOUND_RISK"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid scenario ID '{trigger.scenario_id}'. Available: NORMAL, COKE_OVEN_GAS_LEAK, UNAUTHORIZED_CONFINED_ENTRY, BOILER_PRESSURE_SPIKE"
+            detail=f"Invalid scenario ID '{trigger.scenario_id}'. Available: NORMAL, GAS_LEAK, HOT_WORK_CONFLICT, UNAUTHORIZED_WORKER, COMBINED_COMPOUND_RISK"
         )
     
     simulator_engine.set_scenario(trigger.scenario_id)

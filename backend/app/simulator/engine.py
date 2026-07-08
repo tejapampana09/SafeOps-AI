@@ -60,12 +60,15 @@ class SimulatorEngine:
             for sensor in sensors:
                 old_val = sensor.current_value
                 # Apply scenarios or natural fluctuations
-                if self.active_scenario == "COKE_OVEN_GAS_LEAK" and sensor.id == "SNS-SEC1-GAS01":
-                    # Elevate CO gas rapidly
-                    sensor.current_value = min(150.0, old_val + random.uniform(8.0, 15.0))
-                elif self.active_scenario == "BOILER_PRESSURE_SPIKE" and sensor.id == "SNS-SEC3-PRESS01":
-                    # Elevate steam pressure rapidly
-                    sensor.current_value = min(12.0, old_val + random.uniform(0.5, 1.2))
+                if self.active_scenario == "GAS_LEAK" and sensor.id == "SNS-SEC1-GAS01":
+                    # Gas leak only (WARNING level, no active permit conflict in Sector 1)
+                    sensor.current_value = min(45.0, old_val + random.uniform(3.0, 6.0))
+                elif self.active_scenario == "COMBINED_COMPOUND_RISK" and sensor.id == "SNS-SEC1-GAS01":
+                    # Critical compound risk (CRITICAL level, active welding permit + worker Amit Sharma in Sector 1)
+                    sensor.current_value = min(120.0, old_val + random.uniform(8.0, 15.0))
+                elif self.active_scenario == "HOT_WORK_CONFLICT" and sensor.id == "SNS-SEC1-GAS01":
+                    # Hot work overlap conflict (ELEVATED warning level, active welding permit in Sector 1)
+                    sensor.current_value = min(22.5, old_val + random.uniform(1.5, 3.0))
                 else:
                     # Natural random walk
                     if sensor.type == "GAS":
@@ -130,17 +133,21 @@ class SimulatorEngine:
                             "timestamp": datetime.utcnow().isoformat()
                         })
 
-                # Simulate PPE violation in Scenario B
-                if self.active_scenario == "UNAUTHORIZED_CONFINED_ENTRY" and worker.id == "WRK-002":
-                    if worker.ppe_status != "MISSING_HELMET":
-                        worker.ppe_status = "MISSING_HELMET"
+                # Scenario-based worker overrides
+                if self.active_scenario == "UNAUTHORIZED_WORKER" and worker.id == "WRK-003":
+                    worker.current_location = "Sector 2 - Storage Tanks"
+                    worker.active_permit_id = None
+                    if self.tick_count <= 2:
                         cctv_events.append({
-                            "type": "PPE_VIOLATION",
-                            "message": f"CCTV Alarm: {worker.name} detected in Sector 2 - Storage Tanks without helmet!",
+                            "type": "UNAUTHORIZED_ENTRY",
+                            "message": f"CCTV Alarm: {worker.name} entered Sector 2 - Storage Tanks confined space without active permit!",
                             "timestamp": datetime.utcnow().isoformat()
                         })
+                elif self.active_scenario == "GAS_LEAK" and worker.id == "WRK-001":
+                    # Move technician away from Sector 1 to avoid worker hazard
+                    worker.current_location = "Sector 4 - Loading Bay"
+                    worker.active_permit_id = None
                 elif self.active_scenario == "NORMAL" and random.random() < 0.05:
-                    # Randomly trigger a temporary PPE violation for demonstration
                     if worker.ppe_status == "FULL":
                         worker.ppe_status = "MISSING_HELMET"
                         cctv_events.append({
@@ -163,10 +170,12 @@ class SimulatorEngine:
             # 3. Simulate Permit Operations
             permits = db.query(Permit).all()
             for permit in permits:
-                if self.active_scenario == "COKE_OVEN_GAS_LEAK" and permit.id == "PTW-2026-001":
+                if self.active_scenario == "COMBINED_COMPOUND_RISK" and permit.id == "PTW-2026-001":
                     permit.status = "REVOKED"
-                elif self.active_scenario == "UNAUTHORIZED_CONFINED_ENTRY" and permit.id == "PTW-2026-002":
-                    permit.status = "REVOKED"
+                elif self.active_scenario == "GAS_LEAK" and permit.id == "PTW-2026-001":
+                    permit.status = "EXPIRED"
+                elif self.active_scenario == "HOT_WORK_CONFLICT" and permit.id == "PTW-2026-001":
+                    permit.status = "APPROVED"
                 elif self.active_scenario == "NORMAL":
                     permit.status = "APPROVED"
 
