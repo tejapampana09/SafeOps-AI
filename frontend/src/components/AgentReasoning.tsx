@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { SafetyEvaluation } from '../hooks/useWebSocket';
 
 interface AgentReasoningProps {
@@ -6,11 +6,13 @@ interface AgentReasoningProps {
 }
 
 export const AgentReasoning: React.FC<AgentReasoningProps> = ({ evaluation }) => {
+  const [activeTab, setActiveTab] = useState<'debate' | 'timeline'>('debate');
+
   if (!evaluation) {
     return (
       <div className="card agent-reasoning-container empty">
         <div className="card-header">
-          <h3>💬 Safety Council AI Debate</h3>
+          <h3>💬 Safety Council AI Operations</h3>
         </div>
         <div className="reasoning-empty-state">
           <p>Waiting for system telemetry anomaly to initiate multi-agent Safety Council debate...</p>
@@ -37,6 +39,12 @@ export const AgentReasoning: React.FC<AgentReasoningProps> = ({ evaluation }) =>
     }
   };
 
+  const getScoreBadgeClass = (riskScore: number) => {
+    if (riskScore >= 75) return 'badge-danger';
+    if (riskScore >= 40) return 'badge-warning';
+    return 'badge-success';
+  };
+
   const score = evaluation.compound_risk_score;
   let scoreColorClass = 'score-safe';
   if (score >= 75) {
@@ -49,7 +57,7 @@ export const AgentReasoning: React.FC<AgentReasoningProps> = ({ evaluation }) =>
     <div className="card agent-reasoning-container">
       <div className="card-header flex-header">
         <div>
-          <h3>💬 Safety Council AI Debate</h3>
+          <h3>💬 Safety Council AI Operations</h3>
           <p className="text-small text-muted">{evaluation.explanation}</p>
         </div>
         <div className={`risk-score-circle ${scoreColorClass}`}>
@@ -58,25 +66,136 @@ export const AgentReasoning: React.FC<AgentReasoningProps> = ({ evaluation }) =>
         </div>
       </div>
 
+      {/* Tabs navigation */}
+      <div className="tabs-nav">
+        <button 
+          className={`tab-btn ${activeTab === 'debate' ? 'active' : ''}`}
+          onClick={() => setActiveTab('debate')}
+        >
+          Dialogue Debate
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'timeline' ? 'active' : ''}`}
+          onClick={() => setActiveTab('timeline')}
+        >
+          Reasoning Timeline
+        </button>
+      </div>
+
       <div className="reasoning-body">
-        {/* Debate Transcript */}
-        <div className="debate-transcript-section">
-          <h4>Council Discussion</h4>
-          <div className="debate-scroll">
-            {evaluation.debate_transcript.map((msg, i) => {
-              const styleObj = getAgentStyles(msg.agent);
-              return (
-                <div key={i} className="debate-message-bubble" style={{ backgroundColor: styleObj.bg, borderLeft: `3px solid ${styleObj.color}` }}>
-                  <div className="message-header">
-                    <span className="agent-avatar" style={{ backgroundColor: styleObj.color }}>{styleObj.initials}</span>
-                    <span className="agent-name-text" style={{ color: styleObj.color }}>{msg.agent}</span>
+        {activeTab === 'debate' ? (
+          /* Debate Transcript */
+          <div className="debate-transcript-section">
+            <h4>Council Discussion Logs</h4>
+            <div className="debate-scroll">
+              {evaluation.debate_transcript.map((msg, i) => {
+                const styleObj = getAgentStyles(msg.agent);
+                return (
+                  <div key={i} className="debate-message-bubble" style={{ backgroundColor: styleObj.bg, borderLeft: `3px solid ${styleObj.color}` }}>
+                    <div className="message-header">
+                      <span className="agent-avatar" style={{ backgroundColor: styleObj.color }}>{styleObj.initials}</span>
+                      <span className="agent-name-text" style={{ color: styleObj.color }}>{msg.agent}</span>
+                    </div>
+                    <p className="message-content-text">{msg.message}</p>
                   </div>
-                  <p className="message-content-text">{msg.message}</p>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Agent Reasoning Timeline */
+          <div className="timeline-section-container">
+            <h4>Safety Agent Audit Trail</h4>
+            <div className="timeline-scroll">
+              {/* Step 1: SCADA Agent */}
+              <div className="timeline-node">
+                <div className="node-marker border-brand">1</div>
+                <div className="node-content">
+                  <div className="node-header">
+                    <h5>SCADA Sensor Audit</h5>
+                    <span className={`badge ${getScoreBadgeClass(evaluation.agent_evaluations.scada.risk_score)}`}>
+                      Risk: {evaluation.agent_evaluations.scada.risk_score}%
+                    </span>
+                  </div>
+                  <p className="node-reasoning">{evaluation.agent_evaluations.scada.reasoning}</p>
+                  {evaluation.agent_evaluations.scada.findings.length > 0 && (
+                    <ul className="node-list">
+                      {evaluation.agent_evaluations.scada.findings.map((f, idx) => (
+                        <li key={idx}>🔍 {f}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="node-actions-box">
+                    <strong>SCADA Directives:</strong>
+                    <ul className="node-actions-list">
+                      {evaluation.agent_evaluations.scada.recommended_actions.map((act, idx) => (
+                        <li key={idx}>⚡ {act}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 2: Permit Agent */}
+              <div className="timeline-node">
+                <div className="node-marker border-warning">2</div>
+                <div className="node-content">
+                  <div className="node-header">
+                    <h5>Permit Compliance Audit</h5>
+                    <span className={`badge ${getScoreBadgeClass(evaluation.agent_evaluations.permit.risk_score)}`}>
+                      Risk: {evaluation.agent_evaluations.permit.risk_score}%
+                    </span>
+                  </div>
+                  <p className="node-reasoning">{evaluation.agent_evaluations.permit.reasoning}</p>
+                  {evaluation.agent_evaluations.permit.findings.length > 0 && (
+                    <ul className="node-list">
+                      {evaluation.agent_evaluations.permit.findings.map((f, idx) => (
+                        <li key={idx}>🔍 {f}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="node-actions-box">
+                    <strong>Permit Directives:</strong>
+                    <ul className="node-actions-list">
+                      {evaluation.agent_evaluations.permit.recommended_actions.map((act, idx) => (
+                        <li key={idx}>⚡ {act}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Step 3: CCTV Vision Agent */}
+              <div className="timeline-node">
+                <div className="node-marker border-critical">3</div>
+                <div className="node-content">
+                  <div className="node-header">
+                    <h5>CCTV Vision Audit</h5>
+                    <span className={`badge ${getScoreBadgeClass(evaluation.agent_evaluations.vision.risk_score)}`}>
+                      Risk: {evaluation.agent_evaluations.vision.risk_score}%
+                    </span>
+                  </div>
+                  <p className="node-reasoning">{evaluation.agent_evaluations.vision.reasoning}</p>
+                  {evaluation.agent_evaluations.vision.findings.length > 0 && (
+                    <ul className="node-list">
+                      {evaluation.agent_evaluations.vision.findings.map((f, idx) => (
+                        <li key={idx}>🔍 {f}</li>
+                      ))}
+                    </ul>
+                  )}
+                  <div className="node-actions-box">
+                    <strong>Vision Directives:</strong>
+                    <ul className="node-actions-list">
+                      {evaluation.agent_evaluations.vision.recommended_actions.map((act, idx) => (
+                        <li key={idx}>⚡ {act}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Action checklist and regulations */}
         <div className="mitigation-section">

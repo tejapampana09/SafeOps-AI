@@ -70,10 +70,29 @@ class PermitAgent:
         else:
             reasoning = f"Permit compliance is normal. No SimOps conflicts or hazardous hot work overlaps detected. Active permits: {len(active_permits)}."
 
+        # Define recommended actions
+        if risk_score >= 75:
+            recommended_actions = [
+                "Suspend and revoke conflicting hot work permits immediately",
+                "Evacuate hot work personnel from the affected process sector",
+                "Perform gas verification tests before re-authorizing work"
+            ]
+        elif risk_score >= 40:
+            recommended_actions = [
+                "Issue Simultaneous Operations (SimOps) caution notice to supervisor",
+                "Deploy a dedicated fire watch observer to the sector",
+                "Verify electrical lock-out tag-out (LOTO) clearances"
+            ]
+        else:
+            recommended_actions = [
+                "Maintain standard digital permit-to-work audits"
+            ]
+
         return {
             "agent": self.name,
             "risk_score": risk_score,
             "confidence_score": confidence_score,
             "findings": findings,
-            "reasoning": reasoning
+            "reasoning": reasoning,
+            "recommended_actions": recommended_actions
         }

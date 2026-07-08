@@ -63,11 +63,27 @@ export interface SafetyEvaluation {
   debate_transcript: DebateMessage[];
   mitigation_checklist: string[];
   regulatory_citations: string[];
+  agent_evaluations: AgentEvaluationsMap;
   active_alert: {
     id: string;
     status: string;
     location: string;
   } | null;
+}
+
+export interface AgentEvaluationDetail {
+  agent: string;
+  risk_score: number;
+  confidence_score: number;
+  findings: string[];
+  reasoning: string;
+  recommended_actions: string[];
+}
+
+export interface AgentEvaluationsMap {
+  scada: AgentEvaluationDetail;
+  permit: AgentEvaluationDetail;
+  vision: AgentEvaluationDetail;
 }
 
 export interface CCTVEvent {

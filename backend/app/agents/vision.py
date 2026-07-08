@@ -50,10 +50,28 @@ class VisionAgent:
         else:
             reasoning = "CCTV analytics show full compliance. All workers in active sectors are wearing required PPE, and entry matches approved permits."
 
+        # Define recommended actions
+        if risk_score >= 85:
+            recommended_actions = [
+                "Sound confined space evacuation alarm immediately",
+                "Dispatch safety standby supervisor to Sector 2 entry point",
+                "Ensure emergency rescue harness and oxygen is standby"
+            ]
+        elif risk_score >= 60:
+            recommended_actions = [
+                "Instruct worker via sector intercom to wear required PPE",
+                "Report PPE safety violation to site supervisor"
+            ]
+        else:
+            recommended_actions = [
+                "Maintain continuous CCTV video analytics surveillance"
+            ]
+
         return {
             "agent": self.name,
             "risk_score": risk_score,
             "confidence_score": confidence_score,
             "findings": findings,
-            "reasoning": reasoning
+            "reasoning": reasoning,
+            "recommended_actions": recommended_actions
         }

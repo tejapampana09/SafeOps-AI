@@ -53,10 +53,28 @@ class SCADAAgent:
         else:
             reasoning = "All process parameters (gas, temp, pressure) are within normal operating bounds. No immediate process hazards identified."
 
+        # Define recommended actions
+        if critical_sensors:
+            recommended_actions = [
+                "Isolate process feed lines in affected sector",
+                "Trigger relief valves to dump excessive pressures",
+                "Execute local equipment safety shutdown"
+            ]
+        elif warning_sensors:
+            recommended_actions = [
+                "Increase mechanical ventilation exhaust rates",
+                "Initiate field inspection of process piping and seals"
+            ]
+        else:
+            recommended_actions = [
+                "Maintain default SCADA telemetry surveillance"
+            ]
+
         return {
             "agent": self.name,
             "risk_score": risk_score,
             "confidence_score": confidence_score,
             "findings": findings,
-            "reasoning": reasoning
+            "reasoning": reasoning,
+            "recommended_actions": recommended_actions
         }

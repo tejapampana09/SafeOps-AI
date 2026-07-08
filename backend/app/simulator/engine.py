@@ -289,6 +289,7 @@ class SimulatorEngine:
                     "debate_transcript": safety_eval["debate_transcript"],
                     "mitigation_checklist": safety_eval["mitigation_checklist"],
                     "regulatory_citations": safety_eval["regulatory_citations"],
+                    "agent_evaluations": safety_eval["agent_evaluations"],
                     "active_alert": {
                         "id": active_alert_db.id,
                         "status": active_alert_db.status,
